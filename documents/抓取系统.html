@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信息抓取与 AI Agent 资料库系统设计</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --card: #ffffff;
+    --ink: #1a2e2a;
+    --ink-soft: #4a5d58;
+    --line: #d9d3c5;
+    --teal: #14564f;
+    --teal-soft: #2d8479;
+    --green: #8fb872;
+    --orange: #e07a3c;
+    --yellow: #e8b84a;
+    --shadow: 0 2px 8px rgba(20, 86, 79, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 40px 20px;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--line);
+  }
+  header h1 {
+    font-size: 32px;
+    color: var(--teal);
+    margin-bottom: 10px;
+  }
+  header p {
+    color: var(--ink-soft);
+    font-size: 15px;
+  }
+
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+  }
+  section h2 {
+    font-size: 20px;
+    color: var(--teal);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--line);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  section h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--teal);
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  section h3 {
+    font-size: 16px;
+    color: var(--ink);
+    margin: 18px 0 10px;
+  }
+  p { color: var(--ink-soft); margin-bottom: 10px; }
+
+  /* 流程图 */
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .pipe-node {
+    background: var(--bg);
+    border: 1.5px solid var(--teal);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 14px;
+    color: var(--teal);
+    font-weight: 500;
+    text-align: center;
+    min-width: 110px;
+  }
+  .pipe-node.accent { background: var(--teal); color: white; }
+  .pipe-node.orange { border-color: var(--orange); color: var(--orange); }
+  .pipe-node.green { border-color: var(--green); color: #5a7a3e; }
+  .arrow {
+    color: var(--teal-soft);
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  /* 角色卡 */
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .role-card {
+    background: var(--bg);
+    border-left: 4px solid var(--teal);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .role-card .role-name {
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 6px;
+    font-size: 15px;
+  }
+  .role-card .role-desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .role-card.orange { border-left-color: var(--orange); }
+  .role-card.orange .role-name { color: var(--orange); }
+  .role-card.green { border-left-color: var(--green); }
+  .role-card.green .role-name { color: #5a7a3e; }
+  .role-card.yellow { border-left-color: var(--yellow); }
+  .role-card.yellow .role-name { color: #b8902a; }
+
+  /* 存储对比 */
+  .storage-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 16px;
+  }
+  .storage-box {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  .storage-box.pg { border-top: 4px solid var(--teal); }
+  .storage-box.nas { border-top: 4px solid var(--orange); }
+  .storage-box h4 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  .storage-box.pg h4 { color: var(--teal); }
+  .storage-box.nas h4 { color: var(--orange); }
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-family: ui-monospace, monospace;
+  }
+  .tag.warn { background: #fff4e8; border-color: #f0c9a0; color: #b56020; }
+
+  /* 三来源对照 */
+  .source-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .source-card {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 16px;
+    border-top: 4px solid;
+  }
+  .source-card.wechat { border-top-color: #07c160; }
+  .source-card.youtube { border-top-color: #ff0000; }
+  .source-card.xyz { border-top-color: #fa5151; }
+  .source-card h4 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .source-card.wechat h4 { color: #07c160; }
+  .source-card.youtube h4 { color: #d40000; }
+  .source-card.xyz h4 { color: #d4424f; }
+  .source-card ul {
+    list-style: none;
+    font-size: 12.5px;
+    font-family: ui-monospace, monospace;
+    color: var(--ink-soft);
+  }
+  .source-card li {
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .source-card li:last-child { border-bottom: none; }
+  .source-card .extra {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: white;
+    padding: 8px 10px;
+    border-radius: 4px;
+    border-left: 3px solid var(--yellow);
+  }
+
+  /* 单条爬虫流程 */
+  .crawler-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    padding: 10px 14px;
+    border-radius: 6px;
+    border-left: 3px solid var(--teal-soft);
+    font-size: 14px;
+  }
+  .step .step-num {
+    background: var(--teal);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* 状态机 */
+  .states {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .state-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: ui-monospace, monospace;
+    font-weight: 500;
+  }
+  .state-pill.pending { background: #f0ede0; color: #8a7d4a; }
+  .state-pill.processing { background: #fff4e8; color: #b56020; }
+  .state-pill.ready { background: #e3f0db; color: #4a7030; }
+  .state-pill.failed { background: #ffe5e5; color: #b03030; }
+  .state-pill.transcribing { background: #e8f0ee; color: var(--teal); }
+
+  /* 抓取目标 / Hub / Skill */
+  .feature-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .feature-item {
+    background: var(--bg);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    border-left: 2px solid var(--green);
+  }
+
+  .note {
+    background: #fffbf0;
+    border-left: 3px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+  }
+  .note strong { color: #b8902a; }
+
+  /* 大架构图 */
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg);
+    border-radius: 8px;
+    margin-top: 14px;
+  }
+  .arch-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .arch-block {
+    background: white;
+    border: 2px solid var(--teal);
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: var(--teal);
+    font-weight: 600;
+    min-width: 140px;
+    text-align: center;
+  }
+  .arch-block.dual { display: flex; gap: 6px; padding: 6px; }
+  .arch-block.dual > div {
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .arch-block .pg-half { background: var(--teal); color: white; }
+  .arch-block .nas-half { background: var(--orange); color: white; }
+  .down-arrow {
+    color: var(--teal-soft);
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 720px) {
+    .storage-split, .source-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>信息抓取与 AI Agent 资料库系统</h1>
+  <p>多源数据抓取 · 分表存储 · 给 AI Agent 提供稳定数据访问层</p>
+</header>
+
+<!-- 1. 系统目标 -->
+<section>
+  <h2><span class="num">1</span>系统目标</h2>
+  <p>抓取多种来源的信息，保存到本地，供 AI Agent 后续读取、检索、总结、分析。</p>
+  <div class="source-grid">
+    <div class="source-card wechat">
+      <h4>📰 公众号文章</h4>
+      <p style="font-size: 13px; color: var(--ink-soft);">图文内容，结构化字段 + 图片</p>
+    </div>
+    <div class="source-card youtube">
+      <h4>▶️ YouTube 视频</h4>
+      <p style="font-size: 13px; color: var(--ink-soft);">视频 + transcript + 缩略图</p>
+    </div>
+    <div class="source-card xyz">
+      <h4>🎙️ 小宇宙播客</h4>
+      <p style="font-size: 13px; color: var(--ink-soft);">长音频 + 转录文本</p>
+    </div>
+  </div>
+  <div class="note">
+    <strong>原则：</strong>来源数据结构不同，也不需要统一混合查询，每种来源 <em>单独建表、单独爬取、单独管理</em>。
+  </div>
+</section>
+
+<!-- 2. 总体架构 -->
+<section>
+  <h2><span class="num">2</span>总体架构</h2>
+  <div class="arch-diagram">
+    <div class="arch-block">数据来源</div>
+    <div class="down-arrow">↓</div>
+    <div class="arch-block">抓取目标列表</div>
+    <div class="down-arrow">↓</div>
+    <div class="arch-block">定时爬虫 Crawler</div>
+    <div class="down-arrow">↓</div>
+    <div class="arch-block dual">
+      <div class="pg-half">Postgres</div>
+      <div class="nas-half">NAS</div>
+    </div>
+    <div class="down-arrow">↓</div>
+    <div class="arch-block">Agent Skill</div>
+    <div class="down-arrow">↓</div>
+    <div class="arch-block">AI Agent</div>
+  </div>
+
+  <h3>各部分职责</h3>
+  <div class="role-grid">
+    <div class="role-card">
+      <div class="role-name">Postgres</div>
+      <div class="role-desc">结构化数据、文本、transcript、文件 URL、local_path、metadata、raw_data</div>
+    </div>
+    <div class="role-card orange">
+      <div class="role-name">NAS</div>
+      <div class="role-desc">图片、视频、音频文件本体</div>
+    </div>
+    <div class="role-card green">
+      <div class="role-name">Crawler</div>
+      <div class="role-desc">抓取、下载、必要时转录，写入数据库</div>
+    </div>
+    <div class="role-card yellow">
+      <div class="role-name">Hub</div>
+      <div class="role-desc">管理抓取目标、查看运行状态</div>
+    </div>
+    <div class="role-card">
+      <div class="role-name">Agent Skill</div>
+      <div class="role-desc">给 AI Agent 提供稳定的数据读取能力</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. 存储设计 -->
+<section>
+  <h2><span class="num">3</span>存储设计 · 双层分工</h2>
+  <p>结构化数据进 Postgres，二进制文件进 NAS，Postgres 只存路径不存文件本体。</p>
+  <div class="storage-split">
+    <div class="storage-box pg">
+      <h4>🗄️ Postgres（结构化）</h4>
+      <div class="tag-list">
+        <span class="tag">结构化字段</span>
+        <span class="tag">正文文本</span>
+        <span class="tag">HTML 内容</span>
+        <span class="tag">transcript</span>
+        <span class="tag">原始链接</span>
+        <span class="tag">file local_path</span>
+        <span class="tag">file metadata</span>
+        <span class="tag">抓取状态</span>
+        <span class="tag">转录状态</span>
+        <span class="tag">raw_data JSONB</span>
+        <span class="tag">created_at</span>
+        <span class="tag">updated_at</span>
+      </div>
+      <div class="note" style="margin-top: 14px;">
+        <strong>不存：</strong>图片、视频、音频文件本体
+      </div>
+    </div>
+    <div class="storage-box nas">
+      <h4>💾 NAS（文件本体）</h4>
+      <div class="tag-list">
+        <span class="tag warn">公众号文章图片</span>
+        <span class="tag warn">YouTube 缩略图</span>
+        <span class="tag warn">YouTube 音频/视频</span>
+        <span class="tag warn">小宇宙封面图</span>
+        <span class="tag warn">小宇宙长音频</span>
+        <span class="tag warn">其他附件</span>
+      </div>
+      <div class="note" style="margin-top: 14px;">
+        Postgres 中只保存这些文件在 NAS 上的 <em>路径</em>。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 数据建模原则 -->
+<section>
+  <h2><span class="num">4</span>数据建模原则</h2>
+  <p><strong style="color: var(--teal);">每种来源单独建表</strong>，按各自真实结构建模，不强行统一字段。</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+    <div style="background: #ffe5e5; border-radius: 8px; padding: 16px; border-left: 4px solid #b03030;">
+      <h4 style="color: #b03030; margin-bottom: 10px;">❌ 避免的反模式</h4>
+      <ul style="list-style: none; font-size: 13px; color: var(--ink-soft);">
+        <li>· 一张大表大量字段为空</li>
+        <li>· 不同来源字段互相干扰</li>
+        <li>· 主要数据全部塞进 JSONB</li>
+        <li>· 后期维护困难</li>
+      </ul>
+    </div>
+    <div style="background: #e3f0db; border-radius: 8px; padding: 16px; border-left: 4px solid #5a7a3e;">
+      <h4 style="color: #5a7a3e; margin-bottom: 10px;">✅ 推荐做法</h4>
+      <ul style="list-style: none; font-size: 13px; color: var(--ink-soft);">
+        <li>· 每张主表保留 <code>raw_data JSONB</code></li>
+        <li>· 保存原始 API 返回数据</li>
+        <li>· 方便后期补字段</li>
+        <li>· 方便调试和恢复数据</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5. 示例表结构 -->
+<section>
+  <h2><span class="num">5</span>示例表结构</h2>
+  <div class="source-grid">
+    <div class="source-card wechat">
+      <h4>📰 公众号</h4>
+      <ul>
+        <li>wechat_accounts</li>
+        <li>wechat_articles</li>
+        <li>wechat_article_images</li>
+        <li>wechat_crawl_targets</li>
+      </ul>
+    </div>
+    <div class="source-card youtube">
+      <h4>▶️ YouTube</h4>
+      <ul>
+        <li>youtube_channels</li>
+        <li>youtube_videos</li>
+        <li>youtube_video_transcripts</li>
+        <li>youtube_video_thumbnails</li>
+        <li>youtube_crawl_targets</li>
+      </ul>
+    </div>
+    <div class="source-card xyz">
+      <h4>🎙️ 小宇宙</h4>
+      <ul>
+        <li>xiaoyuzhou_podcasts</li>
+        <li>xiaoyuzhou_episodes</li>
+        <li>xiaoyuzhou_episode_audio</li>
+        <li>xiaoyuzhou_episode_transcripts</li>
+        <li>xiaoyuzhou_crawl_targets</li>
+      </ul>
+      <div class="extra">
+        长音频内容，下载音频 + 转录文本。<br>音频在 NAS，transcript 在 Postgres。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. 抓取目标 -->
+<section>
+  <h2><span class="num">6</span>抓取目标设计</h2>
+  <p>每种来源都有自己的抓取目标表（<code>*_crawl_targets</code>），记录抓取对象与运行状态。</p>
+
+  <h3>抓取目标表通用字段</h3>
+  <div class="feature-list">
+    <div class="feature-item">抓取对象</div>
+    <div class="feature-item">是否启用</div>
+    <div class="feature-item">抓取频率</div>
+    <div class="feature-item">上次抓取时间</div>
+    <div class="feature-item">上次抓取状态</div>
+    <div class="feature-item">失败原因</div>
+    <div class="feature-item">备注信息</div>
+  </div>
+
+  <h3>各来源的抓取对象</h3>
+  <div class="source-grid">
+    <div class="source-card wechat">
+      <h4>📰 公众号</h4>
+      <ul>
+        <li>账号</li>
+        <li>文章入口</li>
+        <li>历史文章链接</li>
+      </ul>
+    </div>
+    <div class="source-card youtube">
+      <h4>▶️ YouTube</h4>
+      <ul>
+        <li>频道</li>
+        <li>播放列表</li>
+        <li>关键词</li>
+      </ul>
+    </div>
+    <div class="source-card xyz">
+      <h4>🎙️ 小宇宙</h4>
+      <ul>
+        <li>播客节目</li>
+        <li>主播</li>
+        <li>单集列表</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 7. 爬虫逻辑 -->
+<section>
+  <h2><span class="num">7</span>爬虫逻辑</h2>
+  <p>每个来源一个独立爬虫：<code>wechat_crawler</code> · <code>youtube_crawler</code> · <code>xiaoyuzhou_crawler</code></p>
+
+  <h3>每个爬虫的完整流程</h3>
+  <div class="crawler-flow">
+    <div class="step"><span class="step-num">1</span>读取抓取目标</div>
+    <div class="step"><span class="step-num">2</span>抓取列表</div>
+    <div class="step"><span class="step-num">3</span>发现新内容</div>
+    <div class="step"><span class="step-num">4</span>抓取详情</div>
+    <div class="step"><span class="step-num">5</span>下载相关文件到 NAS</div>
+    <div class="step"><span class="step-num">6</span>如有需要，进行转录</div>
+    <div class="step"><span class="step-num">7</span>写入 Postgres</div>
+    <div class="step"><span class="step-num">8</span>更新抓取状态</div>
+  </div>
+
+  <div class="note">
+    <strong>第一版策略：</strong>抓取、下载、转录直接写在爬虫流程里。
+    后期数据量大、转录耗时长、失败重试复杂，再把下载和转录拆成独立任务。
+  </div>
+</section>
+
+<!-- 8. 定时任务 -->
+<section>
+  <h2><span class="num">8</span>定时任务设计</h2>
+  <p>第一版可以用简单 scheduler 或 cron 定时运行爬虫。</p>
+  <div class="pipeline">
+    <div class="pipe-node accent">定时任务</div>
+    <span class="arrow">→</span>
+    <div class="pipe-node">运行对应 crawler</div>
+    <span class="arrow">→</span>
+    <div class="pipe-node">完整抓取流程</div>
+    <span class="arrow">→</span>
+    <div class="pipe-node orange">写入 Postgres + NAS</div>
+  </div>
+</section>
+
+<!-- 9. 状态设计 -->
+<section>
+  <h2><span class="num">9</span>状态设计</h2>
+  <p>每条数据有简单状态，方便 Hub 和 Agent 判断数据是否可用。</p>
+
+  <h3>通用状态</h3>
+  <div class="states">
+    <span class="state-pill pending">pending</span>
+    <span class="arrow">→</span>
+    <span class="state-pill processing">processing</span>
+    <span class="arrow">→</span>
+    <span class="state-pill ready">ready</span>
+    <span class="state-pill failed">failed</span>
+  </div>
+
+  <h3>小宇宙播客 · 转录状态（独立）</h3>
+  <div class="states">
+    <span class="state-pill pending">audio_downloaded</span>
+    <span class="arrow">→</span>
+    <span class="state-pill transcribing">transcribing</span>
+    <span class="arrow">→</span>
+    <span class="state-pill ready">transcript_ready</span>
+    <span class="state-pill failed">transcript_failed</span>
+  </div>
+
+  <div class="note">
+    <strong>设计意图：</strong>转录状态独立，即使转录失败，也不会影响 metadata 和音频文件保存。
+  </div>
+</section>
+
+<!-- 10. Hub -->
+<section>
+  <h2><span class="num">10</span>Hub 设计 · 系统控制台</h2>
+  <p>只做简单管理和监控，不负责复杂分析。</p>
+  <div class="feature-list">
+    <div class="feature-item">管理抓取目标</div>
+    <div class="feature-item">启用 / 停用抓取目标</div>
+    <div class="feature-item">查看最近抓取时间</div>
+    <div class="feature-item">查看最近抓取状态</div>
+    <div class="feature-item">查看失败原因</div>
+    <div class="feature-item">查看数据数量</div>
+    <div class="feature-item">查看播客转录状态</div>
+  </div>
+</section>
+
+<!-- 11. Agent Skill -->
+<section>
+  <h2><span class="num">11</span>Agent Skill 设计 · 数据访问层</h2>
+  <p>AI Agent 不直接关心爬虫和数据库结构，只通过 Skill 读取数据。</p>
+
+  <h3>主要能力</h3>
+  <div class="source-grid">
+    <div class="source-card wechat">
+      <h4>📰 公众号</h4>
+      <ul>
+        <li>读取最新文章</li>
+        <li>读取正文和图片</li>
+      </ul>
+    </div>
+    <div class="source-card youtube">
+      <h4>▶️ YouTube</h4>
+      <ul>
+        <li>读取最新视频</li>
+        <li>读取 transcript</li>
+      </ul>
+    </div>
+    <div class="source-card xyz">
+      <h4>🎙️ 小宇宙</h4>
+      <ul>
+        <li>读取最新播客</li>
+        <li>读取 transcript</li>
+        <li>读取音频路径</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>通用查询能力</h3>
+  <div class="feature-list">
+    <div class="feature-item">按时间范围读取</div>
+    <div class="feature-item">按关键词搜索</div>
+    <div class="feature-item">读取 metadata</div>
+    <div class="feature-item">读取 local_path</div>
+  </div>
+
+  <h3>稳定输出格式</h3>
+  <div style="background: var(--bg); padding: 16px; border-radius: 8px; margin-top: 12px; border-left: 4px solid var(--teal);">
+    <div class="tag-list">
+      <span class="tag">标题</span>
+      <span class="tag">来源</span>
+      <span class="tag">作者 / 频道 / 主播</span>
+      <span class="tag">发布时间</span>
+      <span class="tag">正文 / transcript</span>
+      <span class="tag">图片路径</span>
+      <span class="tag">音频路径</span>
+      <span class="tag">原始链接</span>
+      <span class="tag">metadata</span>
+    </div>
+    <p style="font-size: 13px; margin-top: 10px;">
+      不管底层来源结构如何变化，Skill 输出给 Agent 的字段保持稳定。
+    </p>
+  </div>
+</section>
+
+<footer>
+  信息抓取与 AI Agent 资料库系统设计 · 2026-05
+</footer>
+
+</div>
+</body>
+</html>

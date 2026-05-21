@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    container_name: financial_hub_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hub_user
+      POSTGRES_PASSWORD: hub_password
+      POSTGRES_DB: financial_hub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./hub/src/lib/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hub_user -d financial_hub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Limit max connections to prevent overload
+    command: >
+      postgres
+        -c max_connections=50
+        -c shared_buffers=128MB
+        -c effective_cache_size=256MB
+        -c work_mem=4MB
+
+  hub:
+    build:
+      context: ./hub
+      dockerfile: Dockerfile
+    container_name: financial_hub_app
+    restart: unless-stopped
+    ports:
+      - "23000:3000/tcp"
+    environment:
+      DATABASE_URL: postgresql://hub_user:hub_password@postgres:5432/financial_hub
+      DB_POOL_MAX: "5"
+      DB_POOL_IDLE_TIMEOUT: "10000"
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgweb:
+    image: sosedoff/pgweb:0.15.0
+    container_name: financial_hub_pgweb
+    restart: unless-stopped
+    ports:
+      - "23001:8081/tcp"
+    environment:
+      PGWEB_DATABASE_URL: postgresql://hub_user:hub_password@postgres:5432/financial_hub?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
