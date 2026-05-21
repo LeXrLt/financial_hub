@@ -29,6 +29,8 @@ services:
     build:
       context: ./hub
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SOURCE_TYPES: "wechat:微信公众号,youtube:YouTube,xiaoyuzhou:小宇宙播客,substack:Substack"
     container_name: financial_hub_app
     restart: unless-stopped
     ports:

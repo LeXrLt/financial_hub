@@ -1,6 +1,9 @@
 import { Target, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { query } from '@/lib/db/query';
+import { ToggleButton } from './ToggleButton';
+
+export const dynamic = 'force-dynamic';
 
 interface CrawlTarget {
   id: number;
@@ -110,12 +113,7 @@ export default async function TargetsPage() {
                             : '从未'}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <Link
-                            href={`/api/targets/${target.id}/toggle`}
-                            className="text-indigo-600 hover:text-indigo-800"
-                          >
-                            {target.enabled ? '停用' : '启用'}
-                          </Link>
+                          <ToggleButton targetId={target.id} enabled={target.enabled} />
                         </td>
                       </tr>
                     ))}

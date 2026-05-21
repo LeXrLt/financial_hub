@@ -13,6 +13,10 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+ARG NEXT_PUBLIC_SOURCE_TYPES
+ENV NEXT_PUBLIC_SOURCE_TYPES=$NEXT_PUBLIC_SOURCE_TYPES
+
 RUN npm run build
 
 # Production image

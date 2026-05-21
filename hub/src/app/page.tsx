@@ -2,6 +2,8 @@ import { Activity, Database, Radio, AlertTriangle, CheckCircle, XCircle, Clock }
 import Link from 'next/link';
 import { query } from '@/lib/db/query';
 
+export const dynamic = 'force-dynamic';
+
 interface ComponentStatus {
   id: number;
   component_name: string;

@@ -1,11 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+function parseSourceTypes(): { value: string; label: string }[] {
+  const raw = process.env.NEXT_PUBLIC_SOURCE_TYPES || '';
+  return raw
+    .split(',')
+    .map((item) => {
+      const [value, label] = item.split(':');
+      return value && label ? { value: value.trim(), label: label.trim() } : null;
+    })
+    .filter(Boolean) as { value: string; label: string }[];
+}
+
 export default function NewTargetPage() {
+  const sourceTypes = useMemo(() => parseSourceTypes(), []);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -76,9 +88,9 @@ export default function NewTargetPage() {
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="wechat">微信公众号</option>
-              <option value="youtube">YouTube</option>
-              <option value="xiaoyuzhou">小宇宙播客</option>
+              {sourceTypes.map((st) => (
+                <option key={st.value} value={st.value}>{st.label}</option>
+              ))}
             </select>
           </div>
 

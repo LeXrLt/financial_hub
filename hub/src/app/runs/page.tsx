@@ -2,6 +2,8 @@ import { History } from 'lucide-react';
 import Link from 'next/link';
 import { query } from '@/lib/db/query';
 
+export const dynamic = 'force-dynamic';
+
 interface CrawlRun {
   id: number;
   target_name: string;

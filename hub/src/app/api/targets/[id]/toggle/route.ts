@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db/query';
 
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -22,8 +22,7 @@ export async function GET(
       return NextResponse.json({ error: 'Target not found' }, { status: 404 });
     }
 
-    // Redirect back to targets page
-    return NextResponse.redirect(new URL('/targets', request.url));
+    return NextResponse.json(result.rows[0]);
   } catch (err) {
     return NextResponse.json({ error: 'Failed to toggle target' }, { status: 500 });
   }
