@@ -1,0 +1,3 @@
+[submodule "crawlers/substack_skill"]
+	path = crawlers/substack_skill
+	url = https://github.com/LeXrLt/substack_skill.git
