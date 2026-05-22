@@ -163,6 +163,7 @@ git submodule add <repo-url> crawlers/<name>
 | 子模块 | 仓库 |
 |--------|------|
 | `crawlers/substack_skill` | https://github.com/LeXrLt/substack_skill.git |
+| `crawlers/by_luzhe` | https://github.com/lugit123456/skills.git |
 
 ### 更新子模块
 
