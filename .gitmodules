@@ -1,3 +1,6 @@
 [submodule "crawlers/substack_skill"]
 	path = crawlers/substack_skill
 	url = https://github.com/LeXrLt/substack_skill.git
+[submodule "crawlers/by_luzhe"]
+	path = crawlers/by_luzhe
+	url = https://github.com/lugit123456/skills.git
