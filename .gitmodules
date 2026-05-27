@@ -4,3 +4,6 @@
 [submodule "crawlers/by_luzhe"]
 	path = crawlers/by_luzhe
 	url = https://github.com/lugit123456/skills.git
+[submodule "crawlers/sec_skill"]
+	path = crawlers/sec_skill
+	url = https://github.com/LeXrLt/sec_skill.git
