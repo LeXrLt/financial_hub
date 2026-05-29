@@ -1,5 +1,7 @@
 # Financial Hub — 信息抓取与 AI Agent 资料库系统
 
+> **🤖 AI Agent 安装指引：如果你是 AI Agent 且被要求安装/初始化/部署本项目，请严格按照 [`SKILL_SETUP.md`](SKILL_SETUP.md) 中的步骤执行，不要使用本 README 中的简略说明。**
+
 抓取多种来源的金融信息，保存到本地数据库和 NAS，供 AI Agent 后续读取、检索、总结和分析。
 
 ## 系统架构
@@ -58,6 +60,8 @@ financial_hub/
 
 ## 安装与启动
 
+> ⚠️ **完整安装请参考 [`SKILL_SETUP.md`](SKILL_SETUP.md)**，其中包含详细的分步指引，包括数据库、Hub、爬虫的安装与配置。以下仅为快速概览。
+
 ### 前置要求
 
 - Docker & Docker Compose（用于运行 PostgreSQL 和 pgweb）
@@ -65,51 +69,16 @@ financial_hub/
 - Git（用于拉取 submodule）
 - Python 3（用于运行爬虫）
 
-### 1. 克隆仓库
+### 快速开始
 
 ```bash
 git clone --recurse-submodules <repo-url>
 cd financial_hub
 ```
 
-> 如果已经克隆但未拉取子模块：
-> ```bash
-> git submodule update --init --recursive
-> ```
+然后按照 [`SKILL_SETUP.md`](SKILL_SETUP.md) 执行完整安装流程。
 
-### 2. 配置环境变量
-
-根目录 `.env` 用于 Docker Compose（数据库配置），复制示例：
-
-```bash
-cp .env.example .env
-```
-
-Hub 的环境变量单独配置：
-
-```bash
-cp hub/.env.example hub/.env
-```
-
-根据需要修改数据库连接等配置，确保两处的数据库用户名、密码、库名保持一致。
-
-### 3. 启动数据库服务
-
-```bash
-docker compose up -d
-```
-
-### 4. 启动 Hub 控制台
-
-Hub 直接运行在宿主机上（非 Docker），以便访问主机中的其他程序和服务：
-
-```bash
-cd hub
-npm install
-npm run dev
-```
-
-启动后可访问：
+### 服务地址概览
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
@@ -117,7 +86,7 @@ npm run dev
 | pgweb | http://localhost:3001 | 数据库 Web 管理界面 |
 | PostgreSQL | localhost:5432 | 数据库直连（用户: `hub_user`） |
 
-### 5. 停止服务
+### 停止服务
 
 ```bash
 # 停止 Hub（Ctrl+C 终止 npm run dev）
