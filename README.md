@@ -22,7 +22,7 @@ AI Agent
 
 | 组件 | 说明 |
 |------|------|
-| **Hub** | Next.js 管理控制台，管理抓取目标、查看运行日志和组件健康状态 |
+| **Hub** | Next.js 管理控制台，直接运行在宿主机上，管理抓取目标、查看运行日志和组件健康状态 |
 | **Crawlers** | 各数据来源的独立爬虫，通过 git submodule 管理 |
 | **PostgreSQL** | 保存结构化数据、正文、transcript、文件路径、metadata、raw_data |
 | **NAS** | 保存图片、视频、音频等文件本体，数据库中只保存路径 |
@@ -32,11 +32,10 @@ AI Agent
 
 ```
 financial_hub/
-├── hub/                    # Next.js 管理控制台
+├── hub/                    # Next.js 管理控制台（宿主机运行）
 │   ├── src/
 │   │   ├── app/            # 页面和 API 路由
 │   │   └── lib/            # 数据库连接、schema
-│   ├── Dockerfile
 │   └── .env.example
 ├── crawlers/               # 爬虫子模块目录
 │   └── substack_skill/     # Substack 爬虫 (git submodule)
@@ -61,8 +60,10 @@ financial_hub/
 
 ### 前置要求
 
-- Docker & Docker Compose
+- Docker & Docker Compose（用于运行 PostgreSQL 和 pgweb）
+- Node.js >= 20（用于运行 Hub）
 - Git（用于拉取 submodule）
+- Python 3（用于运行爬虫）
 
 ### 1. 克隆仓库
 
@@ -78,51 +79,54 @@ cd financial_hub
 
 ### 2. 配置环境变量
 
-Hub 的环境变量通过 `docker-compose.yml` 管理，无需手动创建 `.env` 文件。
-
-本地开发时，复制示例配置：
+根目录 `.env` 用于 Docker Compose（数据库配置），复制示例：
 
 ```bash
-cp hub/.env.example hub/.env.local
+cp .env.example .env
 ```
 
-根据需要修改 `hub/.env.local` 中的数据库连接等配置。
-
-### 3. 启动服务
+Hub 的环境变量单独配置：
 
 ```bash
-docker compose up --build -d
+cp hub/.env.example hub/.env
+```
+
+根据需要修改数据库连接等配置，确保两处的数据库用户名、密码、库名保持一致。
+
+### 3. 启动数据库服务
+
+```bash
+docker compose up -d
+```
+
+### 4. 启动 Hub 控制台
+
+Hub 直接运行在宿主机上（非 Docker），以便访问主机中的其他程序和服务：
+
+```bash
+cd hub
+npm install
+npm run dev
 ```
 
 启动后可访问：
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| Hub 控制台 | http://localhost:23000 | 管理抓取目标、查看运行状态 |
-| pgweb | http://localhost:23001 | 数据库 Web 管理界面 |
+| Hub 控制台 | http://localhost:3000 | 管理抓取目标、查看运行状态 |
+| pgweb | http://localhost:3001 | 数据库 Web 管理界面 |
 | PostgreSQL | localhost:5432 | 数据库直连（用户: `hub_user`） |
 
-### 4. 停止服务
+### 5. 停止服务
 
 ```bash
+# 停止 Hub（Ctrl+C 终止 npm run dev）
+# 停止数据库
 docker compose down
 ```
 
 > 数据库数据保存在 Docker volume `postgres_data` 中，停止服务不会丢失数据。
 > 如需清除数据：`docker compose down -v`
-
-## 本地开发
-
-```bash
-cd hub
-npm install
-cp .env.example .env.local
-# 确保 PostgreSQL 已启动（可单独启动）：
-# docker compose up postgres -d
-npm run dev
-```
-
-访问 http://localhost:3000。
 
 ## 配置说明
 
@@ -134,10 +138,7 @@ npm run dev
 NEXT_PUBLIC_SOURCE_TYPES=wechat:微信公众号,youtube:YouTube,xiaoyuzhou:小宇宙播客,substack:Substack
 ```
 
-- **本地开发**：修改 `hub/.env.local`，重启 dev server
-- **Docker 部署**：修改 `docker-compose.yml` 中 `hub.build.args.NEXT_PUBLIC_SOURCE_TYPES`，重新构建
-
-> ⚠️ `NEXT_PUBLIC_*` 变量在 Next.js 构建时内联到客户端 JS 中，修改后必须重新构建才能生效。
+修改 `hub/.env` 中的值，重启 Hub 即可生效。
 
 ### 数据库连接池
 
@@ -174,9 +175,8 @@ git submodule update --remote --merge
 
 ## 注意事项
 
-1. **不要将 `.env.local` 提交到 Git**，其中可能包含敏感信息，已在 `.gitignore` 中排除
-2. **Docker 构建不使用 `.env.local`**，`.dockerignore` 会排除该文件，生产环境配置统一通过 `docker-compose.yml` 管理
-3. **数据库 schema 变更**后需重新初始化：先 `docker compose down -v` 清除旧数据，再 `docker compose up --build`
-4. **`NEXT_PUBLIC_*` 环境变量**是构建时内联的，运行时修改无效，必须通过 `build.args` 传入并重新构建镜像
-5. **每种数据来源单独建表**，不强行统一字段，各来源按自身真实结构建模
-6. **克隆仓库时**务必加 `--recurse-submodules`，否则 `crawlers/` 下的子模块内容为空
+1. **不要将 `.env` 提交到 Git**，其中可能包含敏感信息，已在 `.gitignore` 中排除
+2. **Hub 运行在宿主机上**，不使用 Docker，以便访问主机中的其他程序和服务
+3. **数据库 schema 变更**后需重新初始化：先 `docker compose down -v` 清除旧数据，再 `docker compose up -d`
+4. **每种数据来源单独建表**，不强行统一字段，各来源按自身真实结构建模
+5. **克隆仓库时**务必加 `--recurse-submodules`，否则 `crawlers/` 下的子模块内容为空
