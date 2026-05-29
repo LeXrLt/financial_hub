@@ -33,10 +33,10 @@ docker compose up -d
 
 ```bash
 cd hub
-npm install
+bun install
 cp .env.example .env.local
 # 修改 .env.local 中的 DATABASE_URL
-npm run dev
+bun run dev
 ```
 
 ### 数据库迁移
@@ -47,7 +47,7 @@ npm run dev
 
 ```bash
 cd hub
-DATABASE_URL=postgresql://hub_user:hub_password@localhost:5432/financial_hub npm run db:migrate
+DATABASE_URL=postgresql://hub_user:hub_password@localhost:5432/financial_hub bun run db:migrate
 ```
 
 ## API 接口

@@ -65,7 +65,7 @@ financial_hub/
 ### 前置要求
 
 - Docker & Docker Compose（用于运行 PostgreSQL 和 pgweb）
-- Node.js >= 20（用于运行 Hub）
+- Bun（用于运行 Hub，https://bun.sh）
 - Git（用于拉取 submodule）
 - Python 3（用于运行爬虫）
 
@@ -89,7 +89,7 @@ cd financial_hub
 ### 停止服务
 
 ```bash
-# 停止 Hub（Ctrl+C 终止 npm run dev）
+# 停止 Hub（Ctrl+C 终止 bun run dev）
 # 停止数据库
 docker compose down
 ```
