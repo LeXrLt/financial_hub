@@ -7,3 +7,6 @@
 [submodule "crawlers/sec_skill"]
 	path = crawlers/sec_skill
 	url = https://github.com/LeXrLt/sec_skill.git
+[submodule "crawlers/youtube_skill"]
+	path = crawlers/youtube_skill
+	url = https://github.com/LeXrLt/youtube_skill.git
