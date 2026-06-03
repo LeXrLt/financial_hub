@@ -32,7 +32,6 @@ export default function NewTargetPage() {
       source_type: formData.get('source_type'),
       target_name: formData.get('target_name'),
       target_identifier: formData.get('target_identifier'),
-      cron_expression: formData.get('cron_expression'),
       notes: formData.get('notes'),
     };
 
@@ -120,21 +119,6 @@ export default function NewTargetPage() {
               placeholder="例如：公众号ID、频道URL、播客ID"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-          </div>
-
-          <div>
-            <label htmlFor="cron_expression" className="block text-sm font-medium text-gray-700 mb-1">
-              抓取频率 (cron)
-            </label>
-            <input
-              id="cron_expression"
-              name="cron_expression"
-              type="text"
-              defaultValue="0 */6 * * *"
-              placeholder="0 */6 * * *"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <p className="text-xs text-gray-400 mt-1">默认每6小时执行一次</p>
           </div>
 
           <div>
