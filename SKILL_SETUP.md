@@ -28,6 +28,89 @@ Use this skill when:
 - Docker 服务未启动或 Hub 未安装依赖
 - 爬虫子模块缺少依赖或 `.env` 文件
 
+对于**已安装的老用户**，如果用户说"更新系统"、"升级到最新版本"、"更新爬虫"，跳过首次安装步骤，直接执行下方「更新已安装的系统（老用户）」流程。
+
+## 更新已安装的系统（老用户）
+
+> **适用对象：已经按本指南完成首次安装的老用户。** 仅需更新代码、依赖并重启服务，无需重新执行下面的全新安装步骤（Step 1 起）。
+
+当用户说"更新系统"、"升级到最新版本"、"更新爬虫"时，按以下流程执行。整个过程不会改动数据库中已有的数据。
+
+### U1: 更新主仓库代码
+
+```bash
+cd {baseDir} && git pull
+```
+
+如果用户有本地改动导致 `git pull` 失败，提示用户先处理（`git stash` 或提交），不要强制覆盖。
+
+### U2: 更新爬虫子模块
+
+将所有爬虫子模块更新到各自远程的最新版本：
+
+```bash
+cd {baseDir} && git submodule update --init --recursive --remote
+```
+
+### U3: 更新 Hub 依赖并迁移数据库
+
+```bash
+cd {baseDir}/hub && bun install
+```
+
+执行数据库迁移以应用可能新增的表/字段（`schema.sql` 使用 `IF NOT EXISTS`，可安全重复执行，不影响已有数据）：
+
+```bash
+cd {baseDir}/hub && bun run db:migrate
+```
+
+> 迁移依赖 `{baseDir}/hub/.env` 中的 `DATABASE_URL`，确保该文件存在且配置正确。
+
+### U4: 更新爬虫依赖
+
+遍历 `{baseDir}/crawlers/` 下每个子文件夹，按其类型更新依赖：
+
+- 如果存在 `requirements.txt`（Python 项目）：
+  ```bash
+  cd {baseDir}/crawlers/{name}
+  .venv/bin/pip install -r requirements.txt --upgrade
+  ```
+  如果 `.venv` 不存在，说明该爬虫尚未安装，按 Step 7 执行首次安装。
+
+- 如果存在 `package.json`（Node.js 项目）：
+  ```bash
+  cd {baseDir}/crawlers/{name}
+  bun install
+  ```
+
+如果某个爬虫有自己的 `SKILL_SETUP.md` 且其中定义了更新步骤，优先按其说明执行。
+
+### U5: 重启 pm2 服务
+
+更新完成后重启 Hub 和 Scheduler，使新代码与依赖生效：
+
+```bash
+pm2 restart financial-hub
+pm2 restart financial-scheduler
+```
+
+如果这两个进程尚未在 pm2 中注册（首次未用 pm2 启动），改为按 Step 5.3 和 Step 6 启动，启动后执行 `pm2 startup`（按输出执行 sudo 命令）和 `pm2 save` 注册开机自启。
+
+### U6: 验证更新
+
+```bash
+pm2 status
+```
+
+确认 `financial-hub` 与 `financial-scheduler` 均为 `online`，访问 `http://localhost:3000` 确认 Hub 正常加载。查看日志确认无启动错误：
+
+```bash
+pm2 logs financial-hub --lines 30
+pm2 logs financial-scheduler --lines 30
+```
+
+---
+
 ## Step 1: 检查前置环境
 
 确认以下工具已安装：
@@ -49,6 +132,14 @@ pm2 --version
 bun add -g pm2
 # 或使用 npm: npm install -g pm2
 ```
+
+安装完成后，**立即为系统注册 pm2 开机自启**，使机器重启后 pm2 守护的进程能自动恢复：
+
+```bash
+pm2 startup
+```
+
+该命令会输出一条以 `sudo env PATH=...` 开头的命令，**必须执行其输出的那条命令**才能真正完成注册（通常需要 sudo 权限，提示用户授权执行）。
 
 ## Step 2: 拉取 Git 子模块
 
@@ -236,16 +327,15 @@ pm2 logs financial-scheduler
 
 看到 `🚀 Scheduler started` 和 `Reloaded N active jobs` 即表示启动成功。
 
-### 6.1 设置 pm2 开机自启（可选）
+### 6.1 保存进程列表以实现开机自启
 
-如果希望系统重启后 Hub 和 Scheduler 自动恢复：
+Step 1 中已通过 `pm2 startup` 注册了系统级自启。现在保存当前进程列表，使 `financial-hub` 和 `financial-scheduler` 在系统重启后自动恢复：
 
 ```bash
 pm2 save
-pm2 startup
 ```
 
-按照 `pm2 startup` 输出的提示执行对应命令即可。
+> **重要：** 每次新增/删除 pm2 进程后都需重新执行 `pm2 save`，否则重启后不会恢复新进程。
 
 ## Step 7: 安装爬虫依赖
 
