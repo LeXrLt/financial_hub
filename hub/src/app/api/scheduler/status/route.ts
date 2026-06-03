@@ -1,6 +1,6 @@
 /**
- * 调度器状态 API
- * 获取调度器和抓取目标的当前状态
+ * 调度器状态 API（按 source_type）
+ * 获取爬虫调度和抓取目标的当前状态
  */
 
 import { NextResponse } from 'next/server';
@@ -8,12 +8,20 @@ import { query } from '@/lib/db/query';
 
 export const dynamic = 'force-dynamic';
 
+interface CrawlerStatus {
+  source_type: string;
+  enabled: boolean;
+  cron_expression: string;
+  last_run_at: string | null;
+  last_run_status: string | null;
+  last_error: string | null;
+}
+
 interface TargetStatus {
   id: number;
   source_type: string;
   target_name: string;
   enabled: boolean;
-  cron_expression: string;
   last_crawl_at: string | null;
   last_crawl_status: string | null;
   total_items: number;
@@ -31,11 +39,20 @@ interface RecentRun {
 
 export async function GET() {
   try {
+    // 获取爬虫调度配置
+    const crawlersResult = await query<CrawlerStatus>(
+      `SELECT 
+        source_type, enabled, cron_expression,
+        last_run_at, last_run_status, last_error
+       FROM crawler_schedules 
+       ORDER BY source_type`
+    );
+
     // 获取所有目标状态
     const targetsResult = await query<TargetStatus>(
       `SELECT 
         id, source_type, target_name, enabled, 
-        cron_expression, last_crawl_at, last_crawl_status, total_items
+        last_crawl_at, last_crawl_status, total_items
        FROM crawl_targets 
        ORDER BY source_type, target_name`
     );
@@ -51,20 +68,29 @@ export async function GET() {
        LIMIT 10`
     );
 
-    // 统计信息
-    const statsResult = await query(`
+    // 统计信息 - targets
+    const targetStatsResult = await query(`
       SELECT 
         COUNT(*) FILTER (WHERE enabled = true) as enabled_count,
-        COUNT(*) FILTER (WHERE enabled = false) as disabled_count,
-        COUNT(*) FILTER (WHERE last_crawl_status = 'success') as success_count,
-        COUNT(*) FILTER (WHERE last_crawl_status = 'failed') as failed_count,
-        COUNT(*) FILTER (WHERE last_crawl_status = 'running') as running_count
+        COUNT(*) FILTER (WHERE enabled = false) as disabled_count
       FROM crawl_targets
     `);
 
-    const stats = statsResult.rows[0];
+    // 统计信息 - crawlers
+    const crawlerStatsResult = await query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE enabled = true) as enabled_count,
+        COUNT(*) FILTER (WHERE enabled = false) as disabled_count,
+        COUNT(*) FILTER (WHERE last_run_status = 'success') as success_count,
+        COUNT(*) FILTER (WHERE last_run_status = 'failed') as failed_count,
+        COUNT(*) FILTER (WHERE last_run_status = 'running') as running_count
+      FROM crawler_schedules
+    `);
 
-    // 计算各 source_type 的分布
+    const targetStats = targetStatsResult.rows[0];
+    const crawlerStats = crawlerStatsResult.rows[0];
+
+    // 计算各 source_type 的 target 分布
     const byType: Record<string, number> = {};
     for (const target of targetsResult.rows) {
       byType[target.source_type] = (byType[target.source_type] || 0) + 1;
@@ -72,19 +98,25 @@ export async function GET() {
 
     return NextResponse.json({
       scheduler: {
-        // 注意：这里的 running 状态需要调度器进程配合
-        // 在没有调度器进程时显示为 unknown
         status: 'unknown', // running | stopped | unknown
         note: 'Scheduler status requires scheduler process to be running (bun run scheduler)',
       },
+      crawlers: crawlersResult.rows,
       stats: {
-        total: parseInt(stats.enabled_count) + parseInt(stats.disabled_count),
-        enabled: parseInt(stats.enabled_count),
-        disabled: parseInt(stats.disabled_count),
-        success: parseInt(stats.success_count),
-        failed: parseInt(stats.failed_count),
-        running: parseInt(stats.running_count),
-        by_type: byType,
+        targets: {
+          total: parseInt(targetStats.enabled_count) + parseInt(targetStats.disabled_count),
+          enabled: parseInt(targetStats.enabled_count),
+          disabled: parseInt(targetStats.disabled_count),
+          by_type: byType,
+        },
+        crawlers: {
+          total: parseInt(crawlerStats.enabled_count) + parseInt(crawlerStats.disabled_count),
+          enabled: parseInt(crawlerStats.enabled_count),
+          disabled: parseInt(crawlerStats.disabled_count),
+          success: parseInt(crawlerStats.success_count),
+          failed: parseInt(crawlerStats.failed_count),
+          running: parseInt(crawlerStats.running_count),
+        },
       },
       targets: targetsResult.rows,
       recent_runs: runsResult.rows,

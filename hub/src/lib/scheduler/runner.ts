@@ -1,11 +1,11 @@
 /**
  * 任务执行器 - 负责执行单个抓取任务
- * Job Runner - Executes individual crawl tasks
+ * Job Runner - Executes crawl jobs by source_type
  */
 
 import { spawn } from 'child_process';
 import { resolve, join } from 'path';
-import { JobExecutionResult, CrawlTarget, SchedulerConfig } from './types';
+import { JobExecutionResult, SchedulerConfig } from './types';
 
 // 默认配置
 const DEFAULT_CONFIG: Partial<SchedulerConfig> = {
@@ -24,19 +24,19 @@ export class JobRunner {
   }
 
   /**
-   * 执行单个抓取任务
-   * Execute a single crawl job
+   * 执行爬虫任务（按 source_type）
+   * Execute a crawl job by source_type
    */
-  async run(target: CrawlTarget): Promise<JobExecutionResult> {
+  async runBySourceType(sourceType: string): Promise<JobExecutionResult> {
     const startTime = Date.now();
-    const skillPath = this.getSkillPath(target.source_type);
+    const skillPath = this.getSkillPath(sourceType);
     const venvPython = join(skillPath, '.venv', 'bin', 'python');
     const mainScript = join(skillPath, 'main.py');
 
     // 检查必要文件是否存在
     if (!this.fileExists(venvPython)) {
       return this.createErrorResult(
-        target.id,
+        sourceType,
         startTime,
         `Virtual environment not found: ${venvPython}`
       );
@@ -44,19 +44,19 @@ export class JobRunner {
 
     if (!this.fileExists(mainScript)) {
       return this.createErrorResult(
-        target.id,
+        sourceType,
         startTime,
         `Main script not found: ${mainScript}`
       );
     }
 
     return new Promise((resolve) => {
-      // 不传递 --target-id，让 skill 自行查询所有 enabled 目标
+      // 不传递参数，让 skill 自行查询所有 enabled 目标
       const args: string[] = [];
       const stdout: string[] = [];
       const stderr: string[] = [];
 
-      console.log(`[Runner] Starting job ${target.id} (${target.target_name})`);
+      console.log(`[Runner] Starting job for ${sourceType}`);
       console.log(`[Runner] Command: ${venvPython} main.py ${args.join(' ')}`);
       console.log(`[Runner] Working directory: ${skillPath}`);
 
@@ -79,24 +79,24 @@ export class JobRunner {
         const chunk = data.toString();
         stdout.push(chunk);
         // 实时输出到控制台（便于调试）
-        process.stdout.write(`[Job ${target.id}] ${chunk}`);
+        process.stdout.write(`[Job ${sourceType}] ${chunk}`);
       });
 
       child.stderr?.on('data', (data: Buffer) => {
         const chunk = data.toString();
         stderr.push(chunk);
-        process.stderr.write(`[Job ${target.id} stderr] ${chunk}`);
+        process.stderr.write(`[Job ${sourceType} stderr] ${chunk}`);
       });
 
       // 设置超时
       const timeoutId = setTimeout(() => {
-        console.warn(`[Runner] Job ${target.id} timed out after ${this.config.jobTimeoutMs}ms, killing...`);
+        console.warn(`[Runner] Job ${sourceType} timed out after ${this.config.jobTimeoutMs}ms, killing...`);
         child.kill('SIGTERM');
 
         // 如果 SIGTERM 不起作用，5秒后强制杀死
         setTimeout(() => {
           if (!child.killed) {
-            console.warn(`[Runner] Job ${target.id} force killing...`);
+            console.warn(`[Runner] Job ${sourceType} force killing...`);
             child.kill('SIGKILL');
           }
         }, 5000);
@@ -110,11 +110,11 @@ export class JobRunner {
         const stdoutStr = stdout.join('');
         const stderrStr = stderr.join('');
 
-        console.log(`[Runner] Job ${target.id} exited with code ${code}, signal ${signal}`);
+        console.log(`[Runner] Job ${sourceType} exited with code ${code}, signal ${signal}`);
 
         resolve({
           success: code === 0,
-          targetId: target.id,
+          sourceType,
           durationMs,
           exitCode: code,
           stdout: stdoutStr,
@@ -128,11 +128,11 @@ export class JobRunner {
         clearTimeout(timeoutId);
         const durationMs = Date.now() - startTime;
 
-        console.error(`[Runner] Job ${target.id} failed to start:`, error.message);
+        console.error(`[Runner] Job ${sourceType} failed to start:`, error.message);
 
         resolve({
           success: false,
-          targetId: target.id,
+          sourceType,
           durationMs,
           exitCode: null,
           stdout: stdout.join(''),
@@ -172,13 +172,13 @@ export class JobRunner {
    * Create error result
    */
   private createErrorResult(
-    targetId: number,
+    sourceType: string,
     startTime: number,
     error: string
   ): JobExecutionResult {
     return {
       success: false,
-      targetId,
+      sourceType,
       durationMs: Date.now() - startTime,
       exitCode: null,
       stdout: '',

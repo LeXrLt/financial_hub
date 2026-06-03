@@ -1,12 +1,12 @@
 /**
- * 调度器核心 - 管理定时任务的生命周期
- * Scheduler Core - Manages scheduled crawl jobs
+ * 调度器核心 - 管理定时任务的生命周期（按 source_type 调度）
+ * Scheduler Core - Manages scheduled crawl jobs by source_type
  */
 
 import { schedule, ScheduledTask, validate } from 'node-cron';
 import { query } from '@/lib/db/query';
 import {
-  CrawlTarget,
+  CrawlerSchedule,
   ScheduledJob,
   SchedulerConfig,
   SchedulerState,
@@ -27,7 +27,7 @@ export class CrawlScheduler {
   private config: SchedulerConfig;
   private state: SchedulerState;
   private runner: JobRunner;
-  private tasks: Map<number, ScheduledTask>;
+  private tasks: Map<string, ScheduledTask>;  // key: source_type
   private eventHandlers: Set<SchedulerEventHandler>;
   private pollTimer: NodeJS.Timeout | null = null;
 
@@ -38,8 +38,8 @@ export class CrawlScheduler {
     this.eventHandlers = new Set();
     this.state = {
       isRunning: false,
-      jobs: new Map(),
-      runningJobs: new Set(),
+      jobs: new Map(),  // key: source_type
+      runningJobs: new Set(),  // source_types
       lastReloadAt: null,
     };
   }
@@ -87,7 +87,7 @@ export class CrawlScheduler {
     console.log('[Scheduler] Starting...');
     console.log(`[Scheduler] Config: ${JSON.stringify(this.config, null, 2)}`);
 
-    // 初始加载任务
+    // 初始加载任务（从 crawler_schedules 表）
     await this.reloadJobs();
 
     // 启动定期重载（检测数据库变更）
@@ -125,9 +125,9 @@ export class CrawlScheduler {
     }
 
     // 停止所有定时任务
-    for (const [targetId, task] of this.tasks) {
+    for (const [sourceType, task] of this.tasks) {
       task.stop();
-      console.log(`[Scheduler] Stopped task for target ${targetId}`);
+      console.log(`[Scheduler] Stopped task for ${sourceType}`);
     }
     this.tasks.clear();
 
@@ -139,66 +139,67 @@ export class CrawlScheduler {
 
   /**
    * 重载所有任务
-   * Reload all jobs from database
+   * Reload all jobs from crawler_schedules
    */
   async reloadJobs(): Promise<void> {
     console.log('[Scheduler] Reloading jobs from database...');
 
     try {
-      const result = await query<CrawlTarget>(
-        `SELECT * FROM crawl_targets 
+      // 从 crawler_schedules 表加载配置
+      const result = await query<CrawlerSchedule>(
+        `SELECT * FROM crawler_schedules 
          WHERE enabled = true 
-         ORDER BY id`
+         ORDER BY source_type`
       );
 
-      const targets = result.rows;
-      const currentIds = new Set(this.tasks.keys());
-      const newIds = new Set(targets.map((t) => t.id));
+      const schedules = result.rows;
+      const currentTypes = new Set(this.tasks.keys());
+      const newTypes = new Set(schedules.map((s) => s.source_type));
 
       // 停止已删除或禁用的任务
-      for (const targetId of currentIds) {
-        if (!newIds.has(targetId)) {
-          this.stopTask(targetId);
+      for (const sourceType of currentTypes) {
+        if (!newTypes.has(sourceType)) {
+          this.stopTask(sourceType);
         }
       }
 
       // 添加或更新任务
-      for (const target of targets) {
-        this.updateOrCreateTask(target);
+      for (const schedule of schedules) {
+        this.updateOrCreateTask(schedule);
       }
 
       this.state.lastReloadAt = new Date();
       this.emit({ type: 'scheduler:reload', timestamp: new Date() });
 
-      console.log(`[Scheduler] Reloaded ${targets.length} active jobs`);
+      console.log(`[Scheduler] Reloaded ${schedules.length} active jobs`);
     } catch (err) {
       console.error('[Scheduler] Failed to reload jobs:', err);
     }
   }
 
   /**
-   * 触发立即执行（用于手动触发）
-   * Trigger immediate execution
+   * 触发立即执行（按 source_type）
+   * Trigger immediate execution by source_type
    */
-  async triggerNow(targetId: number): Promise<boolean> {
-    const target = await this.getTarget(targetId);
-    if (!target) {
-      console.error(`[Scheduler] Target ${targetId} not found`);
+  async triggerNow(sourceType: string): Promise<boolean> {
+    const schedule = await this.getSchedule(sourceType);
+    if (!schedule) {
+      console.error(`[Scheduler] Schedule for ${sourceType} not found`);
       return false;
     }
 
-    if (!target.enabled) {
-      console.error(`[Scheduler] Target ${targetId} is disabled`);
+    if (!schedule.enabled) {
+      console.error(`[Scheduler] Schedule for ${sourceType} is disabled`);
       return false;
     }
 
-    if (this.state.runningJobs.has(targetId)) {
-      console.error(`[Scheduler] Target ${targetId} is already running`);
+    if (this.state.runningJobs.has(sourceType)) {
+      console.error(`[Scheduler] ${sourceType} is already running`);
       return false;
     }
 
     // 直接执行，不检查并发限制（用户手动触发优先）
-    this.executeJob(target);
+    this.executeJob(schedule);
     return true;
   }
 
@@ -223,12 +224,12 @@ export class CrawlScheduler {
   }
 
   /**
-   * 私有方法：从数据库获取单个目标
+   * 私有方法：从数据库获取单个调度配置
    */
-  private async getTarget(targetId: number): Promise<CrawlTarget | null> {
-    const result = await query<CrawlTarget>(
-      'SELECT * FROM crawl_targets WHERE id = $1',
-      [targetId]
+  private async getSchedule(sourceType: string): Promise<CrawlerSchedule | null> {
+    const result = await query<CrawlerSchedule>(
+      'SELECT * FROM crawler_schedules WHERE source_type = $1',
+      [sourceType]
     );
     return result.rows[0] || null;
   }
@@ -236,119 +237,102 @@ export class CrawlScheduler {
   /**
    * 私有方法：更新或创建定时任务
    */
-  private updateOrCreateTask(target: CrawlTarget): void {
-    const existingTask = this.tasks.get(target.id);
+  private updateOrCreateTask(crawlerSchedule: CrawlerSchedule): void {
+    const existingTask = this.tasks.get(crawlerSchedule.source_type);
 
     // 检查 cron 表达式是否有效
-    if (!this.isValidCron(target.cron_expression)) {
-      console.warn(`[Scheduler] Invalid cron expression for target ${target.id}: ${target.cron_expression}`);
+    if (!this.isValidCron(crawlerSchedule.cron_expression)) {
+      console.warn(`[Scheduler] Invalid cron expression for ${crawlerSchedule.source_type}: ${crawlerSchedule.cron_expression}`);
       if (existingTask) {
-        this.stopTask(target.id);
+        this.stopTask(crawlerSchedule.source_type);
       }
       return;
     }
 
     // 如果任务已存在且表达式未变，跳过
     if (existingTask) {
-      const job = this.state.jobs.get(target.id);
-      if (job && job.cronExpression === target.cron_expression) {
-        // 只更新元数据
-        this.updateJobMetadata(target);
+      const job = this.state.jobs.get(crawlerSchedule.source_type);
+      if (job && job.cronExpression === crawlerSchedule.cron_expression) {
         return;
       }
       // cron 表达式变了，停止旧任务
-      this.stopTask(target.id);
+      this.stopTask(crawlerSchedule.source_type);
     }
 
     // 创建新任务
     const scheduledJob: ScheduledJob = {
-      targetId: target.id,
-      sourceType: target.source_type,
-      targetName: target.target_name,
-      cronExpression: target.cron_expression,
+      sourceType: crawlerSchedule.source_type,
+      cronExpression: crawlerSchedule.cron_expression,
+      enabled: crawlerSchedule.enabled,
       isRunning: false,
-      lastRunAt: null,
+      lastRunAt: crawlerSchedule.last_run_at,
       nextRunAt: null,
       runCount: 0,
       errorCount: 0,
     };
 
-    this.state.jobs.set(target.id, scheduledJob);
+    this.state.jobs.set(crawlerSchedule.source_type, scheduledJob);
 
     // 创建 cron 任务
-    const task = schedule(target.cron_expression, () => {
-      this.onCronTrigger(target);
+    const task = schedule(crawlerSchedule.cron_expression, () => {
+      this.onCronTrigger(crawlerSchedule);
     });
 
-    this.tasks.set(target.id, task);
-
-    // 计算下次运行时间
-    scheduledJob.nextRunAt = this.getNextRunDate(target.cron_expression);
+    this.tasks.set(crawlerSchedule.source_type, task);
 
     this.emit({
       type: 'job:scheduled',
       timestamp: new Date(),
-      targetId: target.id,
+      sourceType: crawlerSchedule.source_type,
       data: scheduledJob,
     });
 
-    console.log(`[Scheduler] Scheduled target ${target.id} (${target.target_name}) with cron: ${target.cron_expression}`);
+    console.log(`[Scheduler] Scheduled ${crawlerSchedule.source_type} with cron: ${crawlerSchedule.cron_expression}`);
   }
 
   /**
    * 私有方法：停止单个任务
    */
-  private stopTask(targetId: number): void {
-    const task = this.tasks.get(targetId);
+  private stopTask(sourceType: string): void {
+    const task = this.tasks.get(sourceType);
     if (task) {
       task.stop();
-      this.tasks.delete(targetId);
-      console.log(`[Scheduler] Stopped task for target ${targetId}`);
+      this.tasks.delete(sourceType);
+      console.log(`[Scheduler] Stopped task for ${sourceType}`);
     }
-    this.state.jobs.delete(targetId);
-  }
-
-  /**
-   * 私有方法：更新任务元数据
-   */
-  private updateJobMetadata(target: CrawlTarget): void {
-    const job = this.state.jobs.get(target.id);
-    if (job) {
-      job.sourceType = target.source_type;
-      job.targetName = target.target_name;
-    }
+    this.state.jobs.delete(sourceType);
   }
 
   /**
    * 私有方法：cron 触发时执行
    */
-  private async onCronTrigger(target: CrawlTarget): Promise<void> {
-    const job = this.state.jobs.get(target.id);
+  private async onCronTrigger(schedule: CrawlerSchedule): Promise<void> {
+    const job = this.state.jobs.get(schedule.source_type);
     if (!job) return;
 
     // 检查并发限制
     if (this.state.runningJobs.size >= this.config.maxConcurrentJobs) {
-      console.log(`[Scheduler] Max concurrent jobs reached, skipping target ${target.id}`);
+      console.log(`[Scheduler] Max concurrent jobs reached, skipping ${schedule.source_type}`);
       return;
     }
 
     // 检查是否已在运行
-    if (this.state.runningJobs.has(target.id)) {
-      console.log(`[Scheduler] Target ${target.id} already running, skipping`);
+    if (this.state.runningJobs.has(schedule.source_type)) {
+      console.log(`[Scheduler] ${schedule.source_type} already running, skipping`);
       return;
     }
 
-    await this.executeJob(target);
+    await this.executeJob(schedule);
   }
 
   /**
    * 私有方法：执行具体任务
    */
-  private async executeJob(target: CrawlTarget): Promise<void> {
-    const job = this.state.jobs.get(target.id);
+  private async executeJob(schedule: CrawlerSchedule): Promise<void> {
+    const job = this.state.jobs.get(schedule.source_type);
     if (!job) return;
 
-    this.state.runningJobs.add(target.id);
+    this.state.runningJobs.add(schedule.source_type);
     job.isRunning = true;
     job.lastRunAt = new Date();
     job.runCount++;
@@ -356,46 +340,65 @@ export class CrawlScheduler {
     this.emit({
       type: 'job:started',
       timestamp: new Date(),
-      targetId: target.id,
+      sourceType: schedule.source_type,
     });
 
-    console.log(`[Scheduler] Executing job for target ${target.id} (${target.target_name})`);
+    console.log(`[Scheduler] Executing job for ${schedule.source_type}`);
 
     try {
-      const result = await this.runner.run(target);
+      const result = await this.runner.runBySourceType(schedule.source_type);
+
+      // 更新数据库中的最后运行状态
+      await query(
+        `UPDATE crawler_schedules 
+         SET last_run_at = NOW(),
+             last_run_status = $1,
+             last_error = $2,
+             updated_at = NOW()
+         WHERE source_type = $3`,
+        [result.success ? 'success' : 'failed', result.error || null, schedule.source_type]
+      );
 
       if (result.success) {
         this.emit({
           type: 'job:completed',
           timestamp: new Date(),
-          targetId: target.id,
+          sourceType: schedule.source_type,
           data: result,
         });
-        console.log(`[Scheduler] Job completed for target ${target.id} (${result.durationMs}ms)`);
+        console.log(`[Scheduler] Job completed for ${schedule.source_type} (${result.durationMs}ms)`);
       } else {
         job.errorCount++;
         this.emit({
           type: 'job:failed',
           timestamp: new Date(),
-          targetId: target.id,
+          sourceType: schedule.source_type,
           data: result,
         });
-        console.error(`[Scheduler] Job failed for target ${target.id}: ${result.error}`);
+        console.error(`[Scheduler] Job failed for ${schedule.source_type}: ${result.error}`);
       }
     } catch (err) {
       job.errorCount++;
+      // 更新失败状态
+      await query(
+        `UPDATE crawler_schedules 
+         SET last_run_at = NOW(),
+             last_run_status = 'failed',
+             last_error = $1,
+             updated_at = NOW()
+         WHERE source_type = $2`,
+        [String(err), schedule.source_type]
+      );
       this.emit({
         type: 'job:failed',
         timestamp: new Date(),
-        targetId: target.id,
+        sourceType: schedule.source_type,
         data: { error: String(err) },
       });
-      console.error(`[Scheduler] Unexpected error for target ${target.id}:`, err);
+      console.error(`[Scheduler] Unexpected error for ${schedule.source_type}:`, err);
     } finally {
-      this.state.runningJobs.delete(target.id);
+      this.state.runningJobs.delete(schedule.source_type);
       job.isRunning = false;
-      // 更新下次运行时间
-      job.nextRunAt = this.getNextRunDate(job.cronExpression);
     }
   }
 
@@ -421,23 +424,6 @@ export class CrawlScheduler {
    */
   private isValidCron(expression: string): boolean {
     return validate(expression);
-  }
-
-  /**
-   * 私有方法：计算下次运行时间
-   */
-  private getNextRunDate(cronExpression: string): Date | null {
-    try {
-      // 使用 cron-parser 或简单估算
-      // 这里简化处理，实际可用 cron-parser 库
-      const now = new Date();
-      const task = schedule(cronExpression, () => {}, { scheduled: false });
-      // node-cron 不直接提供下次运行时间，这里返回 null
-      // 如果需要精确时间，可添加 cron-parser 依赖
-      return null;
-    } catch {
-      return null;
-    }
   }
 }
 

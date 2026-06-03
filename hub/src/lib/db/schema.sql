@@ -1,14 +1,27 @@
 -- Hub System Schema
 -- 用于监控抓取系统各组件运行状态
 
+-- 爬虫调度配置表（按 source_type 配置定时任务）
+CREATE TABLE IF NOT EXISTS crawler_schedules (
+    id SERIAL PRIMARY KEY,
+    source_type VARCHAR(50) NOT NULL UNIQUE,  -- substack, youtube, sec_edgar 等
+    enabled BOOLEAN DEFAULT true,
+    cron_expression VARCHAR(100) DEFAULT '0 */6 * * *',
+    last_run_at TIMESTAMPTZ,
+    last_run_status VARCHAR(50),  -- success, failed
+    last_error TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 抓取目标总表（Hub 统一视图）
+-- 注意：cron_expression 已移到 crawler_schedules 表
 CREATE TABLE IF NOT EXISTS crawl_targets (
     id SERIAL PRIMARY KEY,
     source_type VARCHAR(50) NOT NULL,  -- wechat, youtube, xiaoyuzhou
     target_name VARCHAR(255) NOT NULL,
     target_identifier VARCHAR(500) NOT NULL,
     enabled BOOLEAN DEFAULT true,
-    cron_expression VARCHAR(100) DEFAULT '0 */6 * * *',
     last_crawl_at TIMESTAMPTZ,
     last_crawl_status VARCHAR(50),  -- pending, running, success, failed
     last_error TEXT,
@@ -64,9 +77,26 @@ CREATE TABLE IF NOT EXISTS data_stats (
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_crawler_schedules_source ON crawler_schedules(source_type);
+CREATE INDEX IF NOT EXISTS idx_crawler_schedules_enabled ON crawler_schedules(enabled);
 CREATE INDEX IF NOT EXISTS idx_crawl_targets_source ON crawl_targets(source_type);
 CREATE INDEX IF NOT EXISTS idx_crawl_targets_enabled ON crawl_targets(enabled);
 CREATE INDEX IF NOT EXISTS idx_crawl_runs_target ON crawl_runs(target_id);
 CREATE INDEX IF NOT EXISTS idx_crawl_runs_started ON crawl_runs(started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_system_events_created ON system_events(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_data_stats_source ON data_stats(source_type, snapshot_at DESC);
+
+-- 更新时间触发器
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS update_crawler_schedules_updated_at ON crawler_schedules;
+CREATE TRIGGER update_crawler_schedules_updated_at
+    BEFORE UPDATE ON crawler_schedules
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

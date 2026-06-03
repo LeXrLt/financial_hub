@@ -9,7 +9,6 @@ export interface CrawlTarget {
   target_name: string;
   target_identifier: string;
   enabled: boolean;
-  cron_expression: string;
   last_crawl_at: Date | null;
   last_crawl_status: string | null;
   last_error: string | null;
@@ -19,11 +18,22 @@ export interface CrawlTarget {
   updated_at: Date;
 }
 
+export interface CrawlerSchedule {
+  id: number;
+  source_type: string;
+  enabled: boolean;
+  cron_expression: string;
+  last_run_at: Date | null;
+  last_run_status: string | null;
+  last_error: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface ScheduledJob {
-  targetId: number;
-  sourceType: string;
-  targetName: string;
+  sourceType: string;  // 爬虫类型（如 substack, youtube）
   cronExpression: string;
+  enabled: boolean;
   isRunning: boolean;
   lastRunAt: Date | null;
   nextRunAt: Date | null;
@@ -33,7 +43,7 @@ export interface ScheduledJob {
 
 export interface JobExecutionResult {
   success: boolean;
-  targetId: number;
+  sourceType: string;  // 爬虫类型
   durationMs: number;
   exitCode: number | null;
   stdout: string;
@@ -50,8 +60,8 @@ export interface SchedulerConfig {
 
 export interface SchedulerState {
   isRunning: boolean;
-  jobs: Map<number, ScheduledJob>;
-  runningJobs: Set<number>;
+  jobs: Map<string, ScheduledJob>;  // key: source_type
+  runningJobs: Set<string>;  // source_types currently running
   lastReloadAt: Date | null;
 }
 
@@ -68,7 +78,7 @@ export type SchedulerEventType =
 export interface SchedulerEvent {
   type: SchedulerEventType;
   timestamp: Date;
-  targetId?: number;
+  sourceType?: string;
   data?: unknown;
 }
 

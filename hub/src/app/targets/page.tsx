@@ -11,7 +11,6 @@ interface CrawlTarget {
   target_name: string;
   target_identifier: string;
   enabled: boolean;
-  cron_expression: string;
   last_crawl_at: string | null;
   last_crawl_status: string | null;
   last_error: string | null;
@@ -64,6 +63,9 @@ export default async function TargetsPage() {
               <Link href="/runs" className="text-sm font-medium text-gray-500 hover:text-gray-900">
                 运行日志
               </Link>
+              <Link href="/crawlers" className="text-sm font-medium text-gray-500 hover:text-gray-900">
+                调度管理
+              </Link>
             </nav>
           </div>
         </div>
@@ -91,7 +93,6 @@ export default async function TargetsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">名称</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">标识</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">频率</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">数据量</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">最后抓取</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
@@ -105,7 +106,6 @@ export default async function TargetsPage() {
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{target.target_name}</td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{target.target_identifier}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500 font-mono">{target.cron_expression}</td>
                         <td className="px-6 py-4 text-sm text-gray-500">{target.total_items}</td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {target.last_crawl_at
