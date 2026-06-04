@@ -56,9 +56,19 @@ export class JobRunner {
       const stdout: string[] = [];
       const stderr: string[] = [];
 
+      // 计算该爬虫的下载目录：下载根目录 + source_type
+      // 在 DOWNLOAD_ROOT 后拼接 source_type，作为子爬虫的下载根目录传入
+      const downloadRoot = process.env.DOWNLOAD_ROOT;
+      const crawlerOutputDir = downloadRoot
+        ? join(downloadRoot, sourceType)
+        : undefined;
+
       console.log(`[Runner] Starting job for ${sourceType}`);
       console.log(`[Runner] Command: ${venvPython} main.py ${args.join(' ')}`);
       console.log(`[Runner] Working directory: ${skillPath}`);
+      if (crawlerOutputDir) {
+        console.log(`[Runner] Crawler output dir: ${crawlerOutputDir}`);
+      }
 
       const child = spawn(venvPython, ['main.py', ...args], {
         cwd: skillPath,
@@ -70,6 +80,8 @@ export class JobRunner {
           POSTGRES_DB: process.env.POSTGRES_DB || 'financial_hub',
           POSTGRES_USER: process.env.POSTGRES_USER || 'hub',
           POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD || '',
+          // 下载根目录（DOWNLOAD_ROOT/<source_type>），由各 skill 读取
+          ...(crawlerOutputDir ? { CRAWLER_OUTPUT_DIR: crawlerOutputDir } : {}),
         },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
