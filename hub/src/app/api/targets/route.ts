@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO crawl_targets (source_type, target_name, target_identifier, cron_expression, notes)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO crawl_targets (source_type, target_name, target_identifier, notes)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [source_type, target_name, target_identifier, cron_expression || '0 */6 * * *', notes || null]
+      [source_type, target_name, target_identifier, notes || null]
     );
 
     return NextResponse.json(result.rows[0], { status: 201 });

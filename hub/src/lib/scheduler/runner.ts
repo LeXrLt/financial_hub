@@ -30,8 +30,9 @@ export class JobRunner {
   async runBySourceType(sourceType: string): Promise<JobExecutionResult> {
     const startTime = Date.now();
     const skillPath = this.getSkillPath(sourceType);
+    const entryScript = this.getEntryScript(sourceType);
     const venvPython = join(skillPath, '.venv', 'bin', 'python');
-    const mainScript = join(skillPath, 'main.py');
+    const mainScript = join(skillPath, entryScript);
 
     // 检查必要文件是否存在
     if (!this.fileExists(venvPython)) {
@@ -46,7 +47,7 @@ export class JobRunner {
       return this.createErrorResult(
         sourceType,
         startTime,
-        `Main script not found: ${mainScript}`
+        `Entry script not found: ${mainScript}`
       );
     }
 
@@ -64,13 +65,13 @@ export class JobRunner {
         : undefined;
 
       console.log(`[Runner] Starting job for ${sourceType}`);
-      console.log(`[Runner] Command: ${venvPython} main.py ${args.join(' ')}`);
+      console.log(`[Runner] Command: ${venvPython} ${entryScript} ${args.join(' ')}`);
       console.log(`[Runner] Working directory: ${skillPath}`);
       if (crawlerOutputDir) {
         console.log(`[Runner] Crawler output dir: ${crawlerOutputDir}`);
       }
 
-      const child = spawn(venvPython, ['main.py', ...args], {
+      const child = spawn(venvPython, [entryScript, ...args], {
         cwd: skillPath,
         env: {
           ...process.env,
@@ -156,13 +157,33 @@ export class JobRunner {
   }
 
   /**
-   * 获取 skill 目录路径
-   * Get skill directory path
+   * source_type 到爬虫目录/入口脚本的自定义映射
+   * 格式：{ sourceType: { dir: '相对于 crawlersBasePath 的路径', script: '入口脚本名' } }
+   * 未配置的 source_type 使用默认规则：{sourceType}_skill/main.py
+   */
+  private static readonly CRAWLER_MAP: Record<string, { dir: string; script?: string }> = {
+    wechat: { dir: 'by_luzhe/wechat_reptile', script: 'scheduler_skill.py' },
+    // reddit: { dir: 'reddit_skill', script: 'main.py' },  // 目录尚未存在
+  };
+
+  /**
+   * 获取 skill 目录路径和入口脚本
+   * Get skill directory path and entry script
    */
   private getSkillPath(sourceType: string): string {
-    // 标准化 source_type 到目录名映射
-    const dirName = `${sourceType}_skill`;
-    return resolve(this.config.crawlersBasePath, dirName);
+    const mapping = JobRunner.CRAWLER_MAP[sourceType];
+    if (mapping) {
+      return resolve(this.config.crawlersBasePath, mapping.dir);
+    }
+    // 默认规则：{sourceType}_skill
+    return resolve(this.config.crawlersBasePath, `${sourceType}_skill`);
+  }
+
+  /**
+   * 获取入口脚本名
+   */
+  private getEntryScript(sourceType: string): string {
+    return JobRunner.CRAWLER_MAP[sourceType]?.script || 'main.py';
   }
 
   /**
