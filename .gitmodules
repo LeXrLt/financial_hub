@@ -3,7 +3,7 @@
 	url = https://github.com/LeXrLt/substack_skill.git
 [submodule "crawlers/wechat_reptile_skill"]
 	path = crawlers/wechat_reptile_skill
-	url = https://github.com/lugit123456/wechat_reptile_skill
+	url = https://github.com/lugit123456/wechat_reptile_skill.git
 [submodule "crawlers/sec_skill"]
 	path = crawlers/sec_skill
 	url = https://github.com/LeXrLt/sec_skill.git
