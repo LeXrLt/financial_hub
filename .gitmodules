@@ -13,3 +13,6 @@
 [submodule "crawlers/cninfo_skill"]
 	path = crawlers/cninfo_skill
 	url = https://github.com/LeXrLt/cninfo_skill.git
+[submodule "crawlers/xueqiu_skill"]
+	path = crawlers/xueqiu_skill
+	url = https://github.com/lugit123456/xueqiu_skill.git
