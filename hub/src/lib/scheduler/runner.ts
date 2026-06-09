@@ -147,6 +147,7 @@ export class JobRunner {
    */
   private static readonly CRAWLER_MAP: Record<string, { dir: string; script?: string }> = {
     wechat: { dir: 'by_luzhe/wechat_reptile', script: 'scheduler_skill.py' },
+    sec_edgar: { dir: 'sec_skill', script: 'main.py' },
     // reddit: { dir: 'reddit_skill', script: 'main.py' },  // 目录尚未存在
   };
 

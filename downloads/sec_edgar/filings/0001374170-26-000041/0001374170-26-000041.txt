@@ -1,0 +1,199 @@
+<SEC-DOCUMENT>0001374170-26-000041.txt : 20260511
+<SEC-HEADER>0001374170-26-000041.hdr.sgml : 20260511
+<ACCEPTANCE-DATETIME>20260511103939
+ACCESSION NUMBER:		0001374170-26-000041
+CONFORMED SUBMISSION TYPE:	SCHEDULE 13G/A
+PUBLIC DOCUMENT COUNT:		1
+FILED AS OF DATE:		20260511
+DATE AS OF CHANGE:		20260511
+
+SUBJECT COMPANY:	
+
+	COMPANY DATA:	
+		COMPANY CONFORMED NAME:			Atour Lifestyle Holdings Ltd
+		CENTRAL INDEX KEY:			0001853717
+		STANDARD INDUSTRIAL CLASSIFICATION:	HOTELS & MOTELS [7011]
+		ORGANIZATION NAME:           	05 Real Estate & Construction
+		EIN:				000000000
+		STATE OF INCORPORATION:			E9
+		FISCAL YEAR END:			1231
+
+	FILING VALUES:
+		FORM TYPE:		SCHEDULE 13G/A
+		SEC ACT:		1934 Act
+		SEC FILE NUMBER:	005-93949
+		FILM NUMBER:		26961411
+
+	BUSINESS ADDRESS:	
+		ADDRESS IS A NON US LOCATION: 	YES
+		STREET 1:		1ST FLOOR, WUZHONG BUILDING
+		STREET 2:		618 WUZHONG ROAD, MINHANG DISTRICT
+		CITY:			SHANGHAI
+		PROVINCE COUNTRY:   	F4
+		BUSINESS PHONE:		(86) 021-64059928
+
+	MAIL ADDRESS:	
+		ADDRESS IS A NON US LOCATION: 	YES
+		STREET 1:		1ST FLOOR, WUZHONG BUILDING
+		STREET 2:		618 WUZHONG ROAD, MINHANG DISTRICT
+		CITY:			SHANGHAI
+		PROVINCE COUNTRY:   	F4
+
+FILED BY:		
+
+	COMPANY DATA:	
+		COMPANY CONFORMED NAME:			NORGES BANK
+		CENTRAL INDEX KEY:			0001374170
+		ORGANIZATION NAME:           	
+		EIN:				000000000
+		STATE OF INCORPORATION:			Q8
+		FISCAL YEAR END:			1231
+		LEGAL ENTITY IDENTIFIER:    	549300O6E2WAK3IAXE34
+
+	FILING VALUES:
+		FORM TYPE:		SCHEDULE 13G/A
+
+	BUSINESS ADDRESS:	
+		ADDRESS IS A NON US LOCATION: 	YES
+		STREET 1:		BANKPLASSEN 2
+		STREET 2:		P.O BOX 1179 SENTRUM
+		CITY:			OSLO
+		PROVINCE COUNTRY:   	Q8
+		ZIP:			0107
+		BUSINESS PHONE:		47-24073000
+
+	MAIL ADDRESS:	
+		ADDRESS IS A NON US LOCATION: 	YES
+		STREET 1:		BANKPLASSEN 2
+		STREET 2:		P.O BOX 1179 SENTRUM
+		CITY:			OSLO
+		PROVINCE COUNTRY:   	Q8
+		ZIP:			0107
+
+	FORMER COMPANY:	
+		FORMER CONFORMED NAME:	Norges Bank
+		DATE OF NAME CHANGE:	20060829
+</SEC-HEADER>
+<DOCUMENT>
+<TYPE>SCHEDULE 13G/A
+<SEQUENCE>1
+<FILENAME>primary_doc.xml
+<TEXT>
+<XML>
+<?xml version="1.0" encoding="UTF-8"?><edgarSubmission xmlns="http://www.sec.gov/edgar/schedule13g" xmlns:com="http://www.sec.gov/edgar/common">
+  <schemaVersion>X0202</schemaVersion>
+<headerData>
+    <submissionType>SCHEDULE 13G/A</submissionType>
+    <previousAccessionNumber>0001374170-26-000006</previousAccessionNumber>
+    <filerInfo>
+      <filer>
+        <filerCredentials>
+          <cik>0001374170</cik>
+          <ccc>XXXXXXXX</ccc>
+        </filerCredentials>
+      </filer>
+      <liveTestFlag>LIVE</liveTestFlag>
+
+
+    </filerInfo>
+  </headerData>
+  <formData>
+    <coverPageHeader>
+      <amendmentNo>1</amendmentNo>
+      <securitiesClassTitle>Class A ordinary shares</securitiesClassTitle>
+      <eventDateRequiresFilingThisStatement>03/31/2026</eventDateRequiresFilingThisStatement>
+      <issuerInfo>
+        <issuerCik>0001853717</issuerCik>
+        <issuerName>Atour Lifestyle Holdings Ltd</issuerName>
+        <issuerCusips>
+          <issuerCusipNumber>04965M106</issuerCusipNumber>
+        </issuerCusips>
+        <issuerPrincipalExecutiveOfficeAddress>
+          <com:street1>1ST FLOOR, WUZHONG BUILDING</com:street1>
+          <com:street2>618 WUZHONG ROAD, MINHANG DISTRICT</com:street2>
+          <com:city>SHANGHAI</com:city>
+          <com:stateOrCountry>F4</com:stateOrCountry>
+          <com:zipCode>00000</com:zipCode>
+        </issuerPrincipalExecutiveOfficeAddress>
+      </issuerInfo>
+      <designateRulesPursuantThisScheduleFiled>
+        <designateRulePursuantThisScheduleFiled>Rule 13d-1(b)</designateRulePursuantThisScheduleFiled>
+      </designateRulesPursuantThisScheduleFiled>
+    </coverPageHeader>
+    <coverPageHeaderReportingPersonDetails>
+
+      <reportingPersonName>Norges Bank</reportingPersonName>
+      <citizenshipOrOrganization>Q8</citizenshipOrOrganization>
+      <reportingPersonBeneficiallyOwnedNumberOfShares>
+        <soleVotingPower>15309168.00</soleVotingPower>
+        <sharedVotingPower>0.00</sharedVotingPower>
+        <soleDispositivePower>9094380.00</soleDispositivePower>
+        <sharedDispositivePower>6214788.00</sharedDispositivePower>
+      </reportingPersonBeneficiallyOwnedNumberOfShares>
+      <reportingPersonBeneficiallyOwnedAggregateNumberOfShares>15309168.00</reportingPersonBeneficiallyOwnedAggregateNumberOfShares>
+      <classPercent>4.4900</classPercent>
+      <typeOfReportingPerson>FI</typeOfReportingPerson>
+      <typeOfReportingPerson>OO</typeOfReportingPerson>
+      <comments>15,309,168 Class A ordinary shares held in the form of 5,103,056 ADRs</comments>
+    </coverPageHeaderReportingPersonDetails>
+    <items>
+      <item1>
+        <issuerName>Atour Lifestyle Holdings Ltd</issuerName>
+        <issuerPrincipalExecutiveOfficeAddress>1ST FLOOR, WUZHONG BUILDING, 618 WUZHONG ROAD, MINHANG DISTRICT, SHANGHAI, F4, 00000</issuerPrincipalExecutiveOfficeAddress>
+      </item1>
+      <item2>
+        <filingPersonName>Norges Bank</filingPersonName>
+        <principalBusinessOfficeOrResidenceAddress>Bankplassen 2, PO Box 1179 Sentrum, Oslo, NO-0107, Oslo, Norway</principalBusinessOfficeOrResidenceAddress>
+        <citizenship>Norway</citizenship>
+      </item2>
+      <item3>
+        <notApplicableFlag>N</notApplicableFlag>
+        <typeOfPersonFiling>FI</typeOfPersonFiling>
+        <typeOfPersonFiling>OO</typeOfPersonFiling>
+        <otherTypeOfPersonFiling>Investment Adviser</otherTypeOfPersonFiling>
+      </item3>
+      <item4>
+        <amountBeneficiallyOwned>15309168</amountBeneficiallyOwned>
+        <classPercent>4.4900</classPercent>
+        <numberOfSharesPersonHas>
+          <solePowerOrDirectToVote>15309168</solePowerOrDirectToVote>
+          <sharedPowerOrDirectToVote>0</sharedPowerOrDirectToVote>
+          <solePowerOrDirectToDispose>9094380</solePowerOrDirectToDispose>
+          <sharedPowerOrDirectToDispose>6214788</sharedPowerOrDirectToDispose>
+        </numberOfSharesPersonHas>
+      </item4>
+      <item5>
+        <notApplicableFlag>N</notApplicableFlag>
+        <classOwnership5PercentOrLess>Y</classOwnership5PercentOrLess>
+      </item5>
+      <item6>
+        <notApplicableFlag>Y</notApplicableFlag>
+      </item6>
+      <item7>
+        <notApplicableFlag>Y</notApplicableFlag>
+      </item7>
+      <item8>
+        <notApplicableFlag>Y</notApplicableFlag>
+      </item8>
+      <item9>
+        <notApplicableFlag>Y</notApplicableFlag>
+      </item9>
+      <item10>
+        <notApplicableFlag>N</notApplicableFlag>
+        <certifications>By signing below I certify that, to the best of my knowledge and belief, the securities referred to above were acquired and are held in the ordinary course of business and were not acquired and are not held for the purpose of or with the effect of changing or influencing the control of the issuer of the securities and were not acquired and are not held in connection with or as a participant in any transaction having that purpose or effect, other than activities solely in connection with a nomination under ?? 240.14a-11. I also certify that, to the best of my knowledge and belief, the foreign regulatory scheme applicable to the investment management division of Norges Bank, the central bank of Norway, is substantially comparable to the regulatory scheme applicable to the functionally equivalent U.S. institution(s). I undertake to furnish to the Commission staff, upon request, information that would otherwise be disclosed in a Schedule 13D.</certifications>
+      </item10>
+    </items>
+    <signatureInformation>
+      <reportingPersonName>Norges Bank</reportingPersonName>
+      <signatureDetails>
+        <signature>Stanislav Boiadjiev</signature>
+        <title>Business and Regulatory Compliance</title>
+        <date>05/11/2026</date>
+      </signatureDetails>
+    </signatureInformation>
+  </formData>
+</edgarSubmission>
+</XML>
+</TEXT>
+</DOCUMENT>
+</SEC-DOCUMENT>
