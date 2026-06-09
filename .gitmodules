@@ -10,3 +10,6 @@
 [submodule "crawlers/youtube_skill"]
 	path = crawlers/youtube_skill
 	url = https://github.com/LeXrLt/youtube_skill.git
+[submodule "crawlers/cninfo_skill"]
+	path = crawlers/cninfo_skill
+	url = https://github.com/LeXrLt/cninfo_skill.git

@@ -104,7 +104,7 @@ docker compose down
 数据来源列表通过环境变量 `NEXT_PUBLIC_SOURCE_TYPES` 配置，格式为逗号分隔的 `value:label` 对：
 
 ```
-NEXT_PUBLIC_SOURCE_TYPES=wechat:微信公众号,youtube:YouTube,xiaoyuzhou:小宇宙播客,substack:Substack
+NEXT_PUBLIC_SOURCE_TYPES=wechat:微信公众号,youtube:YouTube,xiaoyuzhou:小宇宙播客,substack:Substack,cninfo:巨潮资讯网
 ```
 
 修改 `hub/.env` 中的值，重启 Hub 即可生效。
@@ -135,6 +135,7 @@ git submodule add <repo-url> crawlers/<name>
 | `crawlers/substack_skill` | https://github.com/LeXrLt/substack_skill.git |
 | `crawlers/by_luzhe` | https://github.com/lugit123456/skills.git |
 | `crawlers/sec_skill` | https://github.com/LeXrLt/sec_skill.git |
+| `crawlers/cninfo_skill` | https://github.com/LeXrLt/cninfo_skill.git |
 
 ### 更新子模块
 

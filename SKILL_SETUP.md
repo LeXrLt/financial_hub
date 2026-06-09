@@ -286,7 +286,7 @@ DB_POOL_MAX=5
 DB_POOL_IDLE_TIMEOUT=10000
 
 # Source types: comma-separated list of value:label pairs
-NEXT_PUBLIC_SOURCE_TYPES=wechat:微信公众号,substack:Substack,sec_edgar:SEC.gov
+NEXT_PUBLIC_SOURCE_TYPES=wechat:微信公众号,substack:Substack,sec_edgar:SEC.gov,cninfo:巨潮资讯网
 EOF
 ```
 
