@@ -2,6 +2,7 @@ import { Target, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { query } from '@/lib/db/query';
 import { ToggleButton } from './ToggleButton';
+import { DeleteButton } from './DeleteButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,7 +114,10 @@ export default async function TargetsPage() {
                             : '从未'}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <ToggleButton targetId={target.id} enabled={target.enabled} />
+                          <div className="flex items-center gap-3">
+                            <ToggleButton targetId={target.id} enabled={target.enabled} />
+                            <DeleteButton targetId={target.id} targetName={target.target_name} />
+                          </div>
                         </td>
                       </tr>
                     ))}
