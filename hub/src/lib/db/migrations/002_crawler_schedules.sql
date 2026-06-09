@@ -30,7 +30,8 @@ VALUES
     ('youtube', true, '0 */6 * * *'),
     ('sec_edgar', true, '0 */6 * * *'),
     ('reddit', true, '0 */6 * * *'),
-    ('wechat', true, '0 */6 * * *')
+    ('wechat', true, '0 */6 * * *'),
+    ('cninfo', true, '0 */6 * * *')
 ON CONFLICT (source_type) DO NOTHING;
 
 -- 5. 添加更新时间触发器
