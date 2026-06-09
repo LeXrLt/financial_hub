@@ -76,7 +76,20 @@ CREATE TABLE IF NOT EXISTS data_stats (
     snapshot_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- API 鉴权密钥表（用于 /api/sql 等需要 key 鉴权的接口）
+CREATE TABLE IF NOT EXISTS api_keys (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
+    enabled BOOLEAN DEFAULT true,
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_api_keys_key ON api_keys(key);
+CREATE INDEX IF NOT EXISTS idx_api_keys_enabled ON api_keys(enabled);
 CREATE INDEX IF NOT EXISTS idx_crawler_schedules_source ON crawler_schedules(source_type);
 CREATE INDEX IF NOT EXISTS idx_crawler_schedules_enabled ON crawler_schedules(enabled);
 CREATE INDEX IF NOT EXISTS idx_crawl_targets_source ON crawl_targets(source_type);
