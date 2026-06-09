@@ -53,7 +53,6 @@ export interface JobExecutionResult {
 
 export interface SchedulerConfig {
   maxConcurrentJobs: number;
-  jobTimeoutMs: number;
   pollIntervalMs: number;
   crawlersBasePath: string;
 }

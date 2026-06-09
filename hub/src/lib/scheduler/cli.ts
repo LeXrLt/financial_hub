@@ -64,7 +64,6 @@ async function main(): Promise<void> {
   // 创建调度器实例
   const scheduler = new CrawlScheduler({
     maxConcurrentJobs: parseInt(process.env.SCHEDULER_MAX_CONCURRENT || '3', 10),
-    jobTimeoutMs: parseInt(process.env.SCHEDULER_TIMEOUT_MS || (30 * 60 * 1000).toString(), 10),
     pollIntervalMs: parseInt(process.env.SCHEDULER_POLL_INTERVAL_MS || (60 * 1000).toString(), 10),
     crawlersBasePath,
   });

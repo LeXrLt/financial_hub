@@ -9,7 +9,6 @@ import { JobExecutionResult, SchedulerConfig } from './types';
 
 // 默认配置
 const DEFAULT_CONFIG: Partial<SchedulerConfig> = {
-  jobTimeoutMs: 30 * 60 * 1000, // 30分钟超时
   crawlersBasePath: resolve(process.cwd(), '..', 'crawlers'),
 };
 
@@ -101,24 +100,10 @@ export class JobRunner {
         process.stderr.write(`[Job ${sourceType} stderr] ${chunk}`);
       });
 
-      // 设置超时
-      const timeoutId = setTimeout(() => {
-        console.warn(`[Runner] Job ${sourceType} timed out after ${this.config.jobTimeoutMs}ms, killing...`);
-        child.kill('SIGTERM');
-
-        // 如果 SIGTERM 不起作用，5秒后强制杀死
-        setTimeout(() => {
-          if (!child.killed) {
-            console.warn(`[Runner] Job ${sourceType} force killing...`);
-            child.kill('SIGKILL');
-          }
-        }, 5000);
-      }, this.config.jobTimeoutMs);
+      // 不设置超时：任务实际运行时间可能很长，由调度器保证同一 source_type 同一时间只运行一个实例
 
       // 处理退出
       child.on('exit', (code, signal) => {
-        clearTimeout(timeoutId);
-
         const durationMs = Date.now() - startTime;
         const stdoutStr = stdout.join('');
         const stderrStr = stderr.join('');
@@ -138,7 +123,6 @@ export class JobRunner {
 
       // 处理错误
       child.on('error', (error) => {
-        clearTimeout(timeoutId);
         const durationMs = Date.now() - startTime;
 
         console.error(`[Runner] Job ${sourceType} failed to start:`, error.message);

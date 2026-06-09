@@ -18,7 +18,6 @@ import JobRunner from './runner';
 // 默认配置
 const DEFAULT_CONFIG: SchedulerConfig = {
   maxConcurrentJobs: 3,
-  jobTimeoutMs: 30 * 60 * 1000, // 30分钟
   pollIntervalMs: 60 * 1000, // 1分钟轮询
   crawlersBasePath: require('path').resolve(process.cwd(), '..', 'crawlers'),
 };
