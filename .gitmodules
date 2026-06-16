@@ -16,3 +16,9 @@
 [submodule "crawlers/xueqiu_skill"]
 	path = crawlers/xueqiu_skill
 	url = https://github.com/lugit123456/xueqiu_skill.git
+[submodule "crawlers/alphapai_reptile_skill"]
+	path = crawlers/alphapai_reptile_skill
+	url = https://github.com/lugit123456/alphapai_reptile_skill.git
+[submodule "crawlers/xiaoeknow_downloader_skill"]
+	path = crawlers/xiaoeknow_downloader_skill
+	url = https://github.com/lugit123456/xiaoeknow_downloader_skill.git
