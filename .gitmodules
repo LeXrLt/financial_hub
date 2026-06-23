@@ -22,3 +22,6 @@
 [submodule "crawlers/xiaoeknow_downloader_skill"]
 	path = crawlers/xiaoeknow_downloader_skill
 	url = https://github.com/lugit123456/xiaoeknow_downloader_skill.git
+[submodule "crawlers/bilibili_reptile_skill"]
+	path = crawlers/bilibili_reptile_skill
+	url = https://github.com/lugit123456/bilibili_reptile_skill.git
