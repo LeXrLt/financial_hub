@@ -25,3 +25,6 @@
 [submodule "crawlers/bilibili_reptile_skill"]
 	path = crawlers/bilibili_reptile_skill
 	url = https://github.com/lugit123456/bilibili_reptile_skill.git
+[submodule "crawlers/economist_weekly_archiver_skill"]
+	path = crawlers/economist_weekly_archiver_skill
+	url = https://github.com/lugit123456/economist_weekly_archiver_skill.git
